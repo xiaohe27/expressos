@@ -7,7 +7,7 @@ ghost var footprint: set<INode>;
 var data: Data;
 var next: INode;
 
-
+/*
 function len():int
 requires Valid();
 reads this, footprint;
@@ -15,7 +15,7 @@ ensures len() == |footprint| == |tailContents| + 1;
 {
 if next == null then 1 else 1 + next.len()
 }
-
+*/
 
 predicate good()
 reads this, footprint;
@@ -38,27 +38,27 @@ reads this, footprint;
 predicate ValidLemma()
 requires Valid();
 reads this, footprint;
-ensures Valid();
+ensures ValidLemma();
 ensures forall nd :: nd in footprint ==> nd != null &&
 										nd.footprint <= footprint;
-ensures forall nd :: nd in footprint - {this} ==> this !in nd.footprint;
 {
-if (next == null) then footprint == {this}
-else footprint == {this} + next.footprint &&
-	this !in next.footprint &&
- (next.ValidLemma())
+if next == null then (footprint == {this})
+else (
+footprint == {this} + next.footprint
+&& next.ValidLemma())
 }
 
 predicate allVLemma()
 requires Valid();
 reads this, footprint;
-ensures Valid();
+ensures allVLemma();
 ensures forall nd :: nd in footprint ==> nd != null && nd.Valid();
 {
 next != null ==> next.allVLemma()
 }
 
 
+/*
 constructor init(d:Data) 
 modifies this;
 ensures Valid();
@@ -149,12 +149,24 @@ assert tailContents == old(tailContents[0..i-1]) + [d] + old(tailContents[i-1..]
 
 this.footprint := {this} + next.footprint;
 }
-
+*/
 
 ////////////////////////////////////////////////////////
 /*
 method update(d:Data, index:int)
 requires 0 <= index <= |tailContents|;
+requires Valid();
+modifies footprint;
+ensures index == 0 ==> (data == d && tailContents == old(tailContents));
+ensures index > 0 ==> (this.data == old(this.data)
+&& tailContents == old(tailContents[0..index-1]) + [d] +
+						old(tailContents[index-1..]));
+ensures footprint == old(footprint);
+{
+if (index == 0) {data := d;}
+else {next.update(d, index-1);}
+
+}
 */
 
 }
