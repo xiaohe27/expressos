@@ -35,6 +35,7 @@ reads this, footprint;
     good() && (next != null ==> next.Valid())
 }
 
+/*
 predicate ValidLemma()
 requires Valid();
 reads this, footprint;
@@ -56,7 +57,7 @@ ensures forall nd :: nd in footprint ==> nd != null && nd.Valid();
 {
 next != null ==> next.allVLemma()
 }
-
+*/
 
 /*
 constructor init(d:Data) 
@@ -152,22 +153,26 @@ this.footprint := {this} + next.footprint;
 */
 
 ////////////////////////////////////////////////////////
-/*
+
 method update(d:Data, index:int)
 requires 0 <= index <= |tailContents|;
 requires Valid();
 modifies footprint;
+ensures Valid();
 ensures index == 0 ==> (data == d && tailContents == old(tailContents));
 ensures index > 0 ==> (this.data == old(this.data)
 && tailContents == old(tailContents[0..index-1]) + [d] +
-						old(tailContents[index-1..]));
+						old(tailContents[index..]));
 ensures footprint == old(footprint);
 {
-if (index == 0) {data := d;}
-else {next.update(d, index-1);}
+if (index == 0) {data := d; }
+else {
+next.update(d, index-1);
+tailContents := [next.data] + next.tailContents;
+}
 
 }
-*/
+
 
 }
 
