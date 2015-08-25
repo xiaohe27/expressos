@@ -23,33 +23,39 @@ reads this, footprint;
     this in footprint 
 	&& (next != null ==> (next in footprint 
 	&& this !in next.footprint 
-	&& next.footprint + {this} == footprint
+	&& footprint == {this} + next.footprint
+	&& tailContents == [next.data] + next.tailContents
 	))
 	&& (next ==null ==> tailContents == [] && footprint == {this})
-	&& (next != null ==> tailContents == [next.data] + next.tailContents)
 }
 
 predicate Valid()
 reads this, footprint;
 {
-    this in footprint 
-	&& (next != null ==> (next in footprint 
-	&& this !in next.footprint 
-	&& next.footprint + {this} == footprint
-	&& next.Valid()
-	))
-	&& (next ==null ==> tailContents == [] && footprint == {this})
-	&& (next != null ==> tailContents == [next.data] + next.tailContents)
+    good() && (next != null ==> next.Valid())
 }
 
 predicate ValidLemma()
 requires Valid();
 reads this, footprint;
 ensures Valid();
-ensures forall nd :: nd in footprint ==> nd != null && nd.footprint <= footprint;
+ensures forall nd :: nd in footprint ==> nd != null &&
+										nd.footprint <= footprint;
 ensures forall nd :: nd in footprint - {this} ==> this !in nd.footprint;
 {
-next != null ==> (next.ValidLemma())
+if (next == null) then footprint == {this}
+else footprint == {this} + next.footprint &&
+	this !in next.footprint &&
+ (next.ValidLemma())
+}
+
+predicate allVLemma()
+requires Valid();
+reads this, footprint;
+ensures Valid();
+ensures forall nd :: nd in footprint ==> nd != null && nd.Valid();
+{
+next != null ==> next.allVLemma()
 }
 
 
@@ -146,32 +152,10 @@ this.footprint := {this} + next.footprint;
 
 
 ////////////////////////////////////////////////////////
-
-function getFtprint(nd:INode): set<INode>
-reads nd;
-{
-if nd == null then {} else nd.footprint
-}
-
-function sumAllFtprint(mySeq: seq<INode>): set<INode>
-reads mySeq;
-ensures forall nd :: nd in mySeq ==> 
-	(nd != null ==> nd.footprint <= sumAllFtprint(mySeq));
-{
-if mySeq == [] then {} else getFtprint(mySeq[0]) + sumAllFtprint(mySeq[1..])
-}
-
-function method getSeq(nd:INode): seq<INode>
-requires nd != null && nd.Valid();
-reads nd, getFtprint(nd);
-ensures forall node :: node in getSeq(nd) ==> node != null && node.Valid();
-ensures (set node | node in getSeq(nd)) == nd.footprint;
-ensures forall i :: 0 <= i < |getSeq(nd)| - 1 ==> 
-		getSeq(nd)[i].next == getSeq(nd)[i+1];
-ensures getSeq(nd)[|getSeq(nd)|-1].next == null;
-{
-if nd.next == null then [nd] else [nd] + getSeq(nd.next)
-}
+/*
+method update(d:Data, index:int)
+requires 0 <= index <= |tailContents|;
+*/
 
 }
 
