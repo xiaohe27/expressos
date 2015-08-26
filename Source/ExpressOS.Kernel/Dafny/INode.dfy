@@ -7,16 +7,6 @@ ghost var footprint: set<INode>;
 var data: Data;
 var next: INode;
 
-/*
-function len():int
-requires Valid();
-reads this, footprint;
-ensures len() == |footprint| == |tailContents| + 1;
-{
-if next == null then 1 else 1 + next.len()
-}
-*/
-
 predicate good()
 reads this, footprint;
 {
@@ -59,7 +49,7 @@ next != null ==> next.allVLemma()
 }
 */
 
-/*
+
 constructor init(d:Data) 
 modifies this;
 ensures Valid();
@@ -76,6 +66,7 @@ ensures fresh(footprint - {this});
 	footprint := {this};
 }
 
+/*
 method preAppend(d:Data) returns (node:INode)
 requires Valid();
 ensures node != null && node.Valid();
@@ -153,7 +144,7 @@ this.footprint := {this} + next.footprint;
 */
 
 ////////////////////////////////////////////////////////
-
+/*
 method update(d:Data, index:int)
 requires 0 <= index <= |tailContents|;
 requires Valid();
@@ -170,9 +161,160 @@ else {
 next.update(d, index-1);
 tailContents := [next.data] + next.tailContents;
 }
+}
+*/
+
 
 }
 
+
+class INodes {
+  var head: INode;
+
+  ghost var contents: seq<Data>;
+  ghost var footprint: set<object>;
+  ghost var spine: set<INode>;
+
+  function valid(): bool
+reads *; 
+{
+this in footprint 
+&& spine <= footprint
+&& head in spine 
+&&
+(forall nd :: nd in spine ==> nd != null && nd.Valid())
+&&
+(forall nd :: nd in spine ==> (nd.footprint <= footprint - {this})) 
+&&
+(forall nd :: nd in spine ==> (nd.next != null ==> nd.next in spine))
+
+&& contents == head.tailContents
+}
+
+method init()
+modifies this;
+ensures valid() && fresh(footprint - {this});
+ensures |contents| == 0;
+ensures spine == {head};
+ensures head.next == null;
+{
+head := new INode.init(null);
+
+contents := head.tailContents;
+
+footprint := {this};
+footprint := footprint + head.footprint;
+spine := {head};
+}
+
+
+method len() returns (len:int)
+requires valid();
+ensures valid();
+ensures len == |contents|;
+{
+var tmp:INode;
+tmp := head;
+len := 0;
+
+while(tmp.next != null)
+decreases tmp.footprint;
+invariant tmp != null && tmp.Valid();
+invariant tmp.next == null ==> tmp.tailContents == [];
+invariant len + |tmp.tailContents| == |contents|;
+{
+len := len + 1;
+
+tmp := tmp.next;
+}
+
+}
+
+/*
+method get(index:int) returns (node:INode)
+requires valid();
+requires 0 <= index < |contents|;
+ensures valid();
+ensures node == spine[index + 1];
+ensures node.data == contents[index];
+{
+var curNd: INode;
+var curPos: int;
+
+curNd := head;
+curPos := 0; 
+
+while (curNd.next != null)
+decreases curNd.footprint;
+invariant 0 <= curPos <= index;
+invariant curNd != null && curNd.Valid();
+invariant curNd == spine[curPos];
+{
+if (curPos == index) 
+{
+return curNd.next;
+}
+
+curPos := curPos + 1;
+curNd := curNd.next;
+}
+
+}
+
+
+method add2Front(d:Data)
+modifies footprint;
+requires valid();
+requires d != null;
+
+ensures valid();
+ensures contents == [d] + old(contents);
+ensures fresh(footprint - old(footprint));
+{
+
+var newNd := new INode.init();
+newNd.data := d;
+newNd.next := head.next;
+
+newNd.tailContents := (if (newNd.next == null) then [] else [newNd.next.data] + newNd.next.tailContents);
+newNd.footprint := newNd.footprint + (if (newNd.next == null) then {} else newNd.next.footprint);
+
+head.next := newNd;
+head.footprint := head.footprint + {newNd};
+head.tailContents := [d] + head.tailContents;
+
+this.footprint := this.footprint + {newNd};
+
+this.spine := this.spine + {newNd};
+
+this.contents := head.tailContents;
+
+}
+
+method insert(d:Data, pos:int) 
+modifies footprint;
+requires valid();
+requires d != null;
+//requires 0 <= pos <= |contents|;
+requires pos == 0;
+
+ensures valid();
+ensures |contents| == (|old(contents)| + 1);
+ensures fresh(footprint - old(footprint));
+{
+//assume pos == 0;
+
+var length := this.len();
+if (pos == 0) {
+
+add2Front(d);
+}
+
+else if (pos == length) {}
+
+else {}
+}
+*/
 
 }
 
