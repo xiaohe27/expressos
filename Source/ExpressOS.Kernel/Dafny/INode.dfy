@@ -26,12 +26,51 @@ reads this, footprint;
 }
 
 /*
+predicate lenLemma()
+requires Valid();
+reads this, footprint;
+ensures lenLemma();
+ensures |footprint| == |tailContents| + 1;
+{
+if (next == null) then footprint == {this}
+						&& tailContents == []
+else footprint == {this} + next.footprint &&
+	 tailContents == [next.data] + next.tailContents
+		&& next.lenLemma()
+}
+*/
+
+predicate nextI(stepNum:int, node:INode)
+requires Valid();
+requires 0 <= stepNum <= |tailContents|;
+reads this, footprint;
+{
+if stepNum == 0 then this == node
+else next != null && next.nextI(stepNum-1, node)
+}
+
+predicate nextContentLemma(stepNum:int, node:INode)
+requires Valid();
+requires 0 <= stepNum <= |tailContents|;
+requires nextI(stepNum, node);
+reads this, footprint;
+ensures node != null;
+ensures nextContentLemma(stepNum, node);
+ensures stepNum == 0 ==> node.data == data;
+ensures stepNum > 0 ==> (node.data == tailContents[stepNum-1]);
+{
+if stepNum == 0 then nextI(0, node)
+else tailContents == [next.data] + next.tailContents
+&& next.nextContentLemma(stepNum-1, node)
+}
+
+
+/*
 predicate ValidLemma()
 requires Valid();
 reads this, footprint;
 ensures ValidLemma();
-ensures forall nd :: nd in footprint ==> nd != null &&
-										nd.footprint <= footprint;
+ensures forall nd :: nd in footprint ==> nd != null && nd.footprint <= footprint;
 {
 if next == null then (footprint == {this})
 else (
@@ -175,21 +214,23 @@ class INodes {
   ghost var footprint: set<object>;
   ghost var spine: set<INode>;
 
-  function valid(): bool
-reads *; 
+predicate valid()
+reads this, footprint; 
 {
 this in footprint 
 && spine <= footprint
 && head in spine 
 &&
-(forall nd :: nd in spine ==> nd != null && nd.Valid())
+(forall nd :: nd in spine ==> (nd != null && nd.footprint <= footprint - {this})) 
 &&
-(forall nd :: nd in spine ==> (nd.footprint <= footprint - {this})) 
+(forall nd :: nd in spine ==> nd != null && nd.Valid())
+
 &&
 (forall nd :: nd in spine ==> (nd.next != null ==> nd.next in spine))
 
 && contents == head.tailContents
 }
+
 
 method init()
 modifies this;
@@ -207,7 +248,7 @@ footprint := footprint + head.footprint;
 spine := {head};
 }
 
-
+/*
 method len() returns (len:int)
 requires valid();
 ensures valid();
@@ -229,14 +270,16 @@ tmp := tmp.next;
 }
 
 }
+*/
+
 
 /*
-method get(index:int) returns (node:INode)
+method get(index:int) returns (d:Data)
 requires valid();
 requires 0 <= index < |contents|;
+
 ensures valid();
-ensures node == spine[index + 1];
-ensures node.data == contents[index];
+//ensures d == contents[index];
 {
 var curNd: INode;
 var curPos: int;
@@ -247,12 +290,14 @@ curPos := 0;
 while (curNd.next != null)
 decreases curNd.footprint;
 invariant 0 <= curPos <= index;
-invariant curNd != null && curNd.Valid();
-invariant curNd == spine[curPos];
+invariant curNd != null && curNd.Valid() && curNd.lenLemma();
+invariant curPos + |curNd.tailContents| + 1 == |head.footprint|;
+invariant curNd.next != null ==>
+	curNd.next.data == head.tailContents[curPos];
 {
 if (curPos == index) 
 {
-return curNd.next;
+return curNd.next.data;
 }
 
 curPos := curPos + 1;
@@ -260,8 +305,10 @@ curNd := curNd.next;
 }
 
 }
+*/
 
 
+/*
 method add2Front(d:Data)
 modifies footprint;
 requires valid();
