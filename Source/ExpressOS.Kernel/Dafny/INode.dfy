@@ -25,7 +25,7 @@ reads this, footprint;
     good() && (next != null ==> next.Valid())
 }
 
-/*
+
 predicate lenLemma()
 requires Valid();
 reads this, footprint;
@@ -38,7 +38,7 @@ else footprint == {this} + next.footprint &&
 	 tailContents == [next.data] + next.tailContents
 		&& next.lenLemma()
 }
-*/
+
 
 predicate nextI(stepNum:int, node:INode)
 requires Valid();
@@ -64,6 +64,16 @@ else tailContents == [next.data] + next.tailContents
 && next.nextContentLemma(stepNum-1, node)
 }
 
+/*
+predicate nextILemma(stepNum:int, node:INode)
+requires Valid();
+requires node != null && node.Valid();
+requires node in footprint;
+reads this, footprint;
+ensures nextI(stepNum, node);
+{
+}
+*/
 
 /*
 predicate ValidLemma()
@@ -278,7 +288,7 @@ method get(index:int) returns (d:Data)
 requires valid();
 requires 0 <= index < |contents|;
 
-ensures valid();
+//ensures valid();
 //ensures d == contents[index];
 {
 var curNd: INode;
@@ -290,10 +300,10 @@ curPos := 0;
 while (curNd.next != null)
 decreases curNd.footprint;
 invariant 0 <= curPos <= index;
-invariant curNd != null && curNd.Valid() && curNd.lenLemma();
-invariant curPos + |curNd.tailContents| + 1 == |head.footprint|;
-invariant curNd.next != null ==>
-	curNd.next.data == head.tailContents[curPos];
+invariant head.Valid();
+invariant curNd != null && curNd.Valid() && head.nextContentLemma(curPos, curNd);
+//invariant curNd.next != null ==>
+//	curNd.next.data == head.tailContents[curPos];
 {
 if (curPos == index) 
 {
