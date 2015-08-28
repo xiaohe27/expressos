@@ -161,7 +161,6 @@ assert tailContents == old(tailContents[0..i-1]) + [d] + old(tailContents[i-1..]
 this.footprint := {this} + next.footprint;
 }
 
-*/
 ////////////////////////////////////////////////////////
 
 method update(d:Data, index:int)
@@ -194,6 +193,7 @@ if index == 0 {return data;}
 else {d := next.get(index-1);}
 }
 
+*/
 
 }
 
@@ -376,7 +376,7 @@ else {
 insertAt(pos, d);
 }
 }
-*/
+
 
 method update(d:Data, index:int)
 requires 0 <= index < |contents|;
@@ -392,6 +392,38 @@ contents := head.tailContents;
 
 assert head.allVLemma() && head.ValidLemma();
 }
+
+*/
+
+method delete(index:int)
+requires valid();
+requires 0 <= index < |contents|;
+
+requires index == 0;
+
+modifies footprint;
+ensures valid();
+ensures contents == old(contents[0..index]) + old(contents[index+1..]);
+{
+if (index == 0) {
+   head.next := head.next.next;
+
+   head.footprint := {head} + (if head.next == null then {} else 
+				head.next.footprint);
+
+   spine := head.footprint;
+   head.tailContents := if head.next == null then [] else 
+			[head.next.data] + head.next.tailContents;
+}
+
+else {}
+
+
+contents := head.tailContents;
+
+assert head.allVLemma() && head.ValidLemma();
+}
+
 
 }
 
