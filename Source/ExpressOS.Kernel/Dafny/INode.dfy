@@ -81,7 +81,7 @@ ensures fresh(footprint - {this});
 	footprint := {this};
 }
 
-
+/*
 method preAppend(d:Data) returns (node:INode)
 requires Valid();
 ensures node != null && node.Valid();
@@ -95,8 +95,9 @@ r.footprint := r.footprint + this.footprint;
 r.tailContents := [this.data] + this.tailContents;
 return r;
 }
+*/
 
-method append(d:Data)
+method append(d:Data) returns (newNd:INode)
 requires Valid();
 
 modifies footprint;
@@ -104,19 +105,20 @@ decreases footprint;
 ensures Valid();
 ensures (tailContents == old(tailContents) + [d]);
 ensures this.data == old(this.data);
-ensures fresh(footprint - old(footprint));
+ensures footprint == old(footprint) + {newNd};
+ensures fresh(newNd);
 {
-var node := new INode.init(d);
 
 if(next == null)
 {
-next := node;
+newNd := new INode.init(d);
+next := newNd;
 this.tailContents := [d];
 }
 
 else
  {
-next.append(d);
+newNd := next.append(d);
 this.tailContents := [this.next.data] + this.next.tailContents;
 }
 
@@ -179,7 +181,7 @@ tailContents := [next.data] + next.tailContents;
 }
 
 
-
+/*
 method get(index:int) returns (d:Data)
 requires Valid();
 requires 0 <= index <= |tailContents|;
@@ -190,6 +192,8 @@ ensures d == (if index == 0 then data else tailContents[index-1]);
 if index == 0 {return data;} 
 else {d := next.get(index-1);}
 }
+*/
+
 }
 
 function getFtprint(nd:INode): set<INode>
@@ -240,7 +244,7 @@ footprint := footprint + head.footprint;
 spine := {head};
 }
 
-
+/*
 method len() returns (len:int)
 requires valid();
 ensures valid();
@@ -303,6 +307,26 @@ contents := head.tailContents;
 
 assert head.allVLemma();
 }
+*/
+
+method append(d:Data)
+requires valid();
+
+modifies footprint;
+ensures valid();
+ensures (contents == old(contents) + [d]);
+ensures fresh(footprint - old(footprint));
+{
+var newNd := head.append(d);
+
+footprint := footprint + {newNd};
+spine := spine + {newNd};
+contents := head.tailContents;
+
+assert head.allVLemma() && head.ValidLemma();
+
+}
+
 
 /*
 method insert(d:Data, pos:int) 
