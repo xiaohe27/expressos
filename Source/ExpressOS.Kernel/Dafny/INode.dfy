@@ -81,7 +81,7 @@ ensures fresh(footprint - {this});
 	footprint := {this};
 }
 
-/*
+
 method preAppend(d:Data) returns (node:INode)
 requires Valid();
 ensures node != null && node.Valid();
@@ -156,10 +156,10 @@ assert tailContents == old(tailContents[0..i-1]) + [d] + old(tailContents[i-1..]
 
 this.footprint := {this} + next.footprint;
 }
-*/
+
 
 ////////////////////////////////////////////////////////
-/*
+
 method update(d:Data, index:int)
 requires 0 <= index <= |tailContents|;
 requires Valid();
@@ -177,7 +177,7 @@ next.update(d, index-1);
 tailContents := [next.data] + next.tailContents;
 }
 }
-*/
+
 
 
 method get(index:int) returns (d:Data)
@@ -220,6 +220,7 @@ this in footprint
 (forall nd :: nd in spine ==> (nd.next != null ==> nd.next in spine))
 
 && contents == head.tailContents
+&& head.footprint == spine
 }
 
 
@@ -239,7 +240,7 @@ footprint := footprint + head.footprint;
 spine := {head};
 }
 
-/*
+
 method len() returns (len:int)
 requires valid();
 ensures valid();
@@ -261,9 +262,6 @@ tmp := tmp.next;
 }
 
 }
-*/
-
-
 
 method get(index:int) returns (d:Data)
 requires valid();
@@ -277,7 +275,7 @@ d := head.get(index+1);
 
 
 
-/*
+
 method add2Front(d:Data)
 modifies footprint;
 requires valid();
@@ -287,26 +285,26 @@ ensures valid();
 ensures contents == [d] + old(contents);
 ensures fresh(footprint - old(footprint));
 {
+head.data := d;
 
-var newNd := new INode.init();
-newNd.data := d;
-newNd.next := head.next;
+var newHead := new INode.init(null);
+newHead.next := head;
 
-newNd.tailContents := (if (newNd.next == null) then [] else [newNd.next.data] + newNd.next.tailContents);
-newNd.footprint := newNd.footprint + (if (newNd.next == null) then {} else newNd.next.footprint);
+newHead.footprint := {newHead} + head.footprint;
+newHead.tailContents := [d] + head.tailContents;
 
-head.next := newNd;
-head.footprint := head.footprint + {newNd};
-head.tailContents := [d] + head.tailContents;
+head := newHead;
 
-this.footprint := this.footprint + {newNd};
+footprint := footprint + {newHead};
 
-this.spine := this.spine + {newNd};
+spine := spine + {head};
 
-this.contents := head.tailContents;
+contents := head.tailContents;
 
+assert head.allVLemma();
 }
 
+/*
 method insert(d:Data, pos:int) 
 modifies footprint;
 requires valid();
