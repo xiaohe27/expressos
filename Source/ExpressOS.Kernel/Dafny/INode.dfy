@@ -49,6 +49,24 @@ if stepNum == 0 then this == node
 else next != null && next.nextI(stepNum-1, node)
 }
 
+predicate distLemma()
+requires Valid();
+reads this, footprint;
+ensures distLemma();
+ensures allVLemma();
+ensures 
+forall node :: node in footprint ==> node != null &&
+nextILemma2(node) &&
+nextI(|footprint|-|node.footprint|, node);
+{
+if next == null then footprint == {this}
+else 
+ |footprint| - 1 == |next.footprint|
+&& next.distLemma()
+}
+
+
+/*
 predicate nextContentLemma(stepNum:int, node:INode)
 requires Valid();
 requires 0 <= stepNum <= |tailContents|;
@@ -63,19 +81,31 @@ if stepNum == 0 then nextI(0, node)
 else tailContents == [next.data] + next.tailContents
 && next.nextContentLemma(stepNum-1, node)
 }
+*/
 
-/*
-predicate nextILemma(stepNum:int, node:INode)
+
+predicate nextILemma2(node:INode)
 requires Valid();
 requires node != null && node.Valid();
 requires node in footprint;
-reads this, footprint;
-ensures nextI(stepNum, node);
+reads this, footprint, node, getFtprint(node);
+ensures nextILemma2(node);
+ensures {node} <= node.footprint <= footprint;
+ensures |footprint| == |tailContents| + 1;
+ensures 0 <= |footprint|-|node.footprint| <= |tailContents|;
+decreases footprint;
 {
+allVLemma() &&
+(
+if next == null || this == node then footprint == node.footprint
+else next != null &&
+ValidLemma() &&
+footprint == {this} + next.footprint &&
+next.nextILemma2(node))
 }
-*/
 
-/*
+
+
 predicate ValidLemma()
 requires Valid();
 reads this, footprint;
@@ -88,15 +118,17 @@ footprint == {this} + next.footprint
 && next.ValidLemma())
 }
 
+
 predicate allVLemma()
 requires Valid();
 reads this, footprint;
 ensures allVLemma();
+ensures |tailContents| == |footprint|-1;
 ensures forall nd :: nd in footprint ==> nd != null && nd.Valid();
 {
 next != null ==> next.allVLemma()
 }
-*/
+
 
 
 constructor init(d:Data) 
@@ -213,9 +245,13 @@ tailContents := [next.data] + next.tailContents;
 }
 */
 
-
 }
 
+function getFtprint(nd:INode): set<INode>
+reads nd;
+{
+if nd == null then {} else nd.footprint
+}
 
 class INodes {
   var head: INode;
