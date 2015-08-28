@@ -95,7 +95,6 @@ r.footprint := r.footprint + this.footprint;
 r.tailContents := [this.data] + this.tailContents;
 return r;
 }
-*/
 
 method append(d:Data) returns (newNd:INode)
 requires Valid();
@@ -125,17 +124,19 @@ this.tailContents := [this.next.data] + this.next.tailContents;
 this.footprint := {this} + next.footprint;
 
 }
+*/
 
-method insertAt(i:int, d:Data)
+method insertAt(i:int, d:Data) returns (newNd: INode)
 requires 0 < i <= |tailContents|;
 requires Valid();
 modifies footprint;
 ensures Valid();
 ensures this.data == old(this.data);
 ensures tailContents == old(tailContents[0..i-1]) + [d] + old(tailContents[i-1..]);
-ensures fresh(footprint - old(footprint));
+ensures footprint == old(footprint) + {newNd};
+ensures fresh(newNd);
 {
-var newNd := new INode.init(d);
+newNd := new INode.init(d);
 
 if (i == 1) {
 newNd.next := next;
@@ -149,7 +150,7 @@ this.next := newNd;
 }
 
 else {
-next.insertAt(i-1, d);
+newNd := next.insertAt(i-1, d);
 }
 
 this.tailContents := [next.data] + next.tailContents;
@@ -278,8 +279,6 @@ d := head.get(index+1);
 }
 
 
-
-
 method add2Front(d:Data)
 modifies footprint;
 requires valid();
@@ -307,7 +306,6 @@ contents := head.tailContents;
 
 assert head.allVLemma();
 }
-*/
 
 method append(d:Data)
 requires valid();
@@ -326,7 +324,26 @@ contents := head.tailContents;
 assert head.allVLemma() && head.ValidLemma();
 
 }
+*/
 
+
+
+method insertAt(i:int, d:Data)
+requires 0 < i < |contents|;
+requires valid();
+modifies footprint;
+ensures valid();
+ensures contents == old(contents[0..i]) + [d] + old(contents[i..]);
+ensures fresh(footprint - old(footprint));
+{
+var newNd := head.insertAt(i+1, d);
+
+footprint := footprint + {newNd};
+spine := spine + {newNd};
+contents := head.tailContents;
+
+assert head.allVLemma() && head.ValidLemma();
+}
 
 /*
 method insert(d:Data, pos:int) 
