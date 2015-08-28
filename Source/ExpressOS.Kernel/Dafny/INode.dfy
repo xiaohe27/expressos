@@ -81,7 +81,7 @@ ensures fresh(footprint - {this});
 	footprint := {this};
 }
 
-/*
+
 method preAppend(d:Data) returns (node:INode)
 requires Valid();
 ensures node != null && node.Valid();
@@ -124,7 +124,7 @@ this.tailContents := [this.next.data] + this.next.tailContents;
 this.footprint := {this} + next.footprint;
 
 }
-*/
+
 
 method insertAt(i:int, d:Data) returns (newNd: INode)
 requires 0 < i <= |tailContents|;
@@ -182,7 +182,6 @@ tailContents := [next.data] + next.tailContents;
 }
 
 
-/*
 method get(index:int) returns (d:Data)
 requires Valid();
 requires 0 <= index <= |tailContents|;
@@ -193,7 +192,7 @@ ensures d == (if index == 0 then data else tailContents[index-1]);
 if index == 0 {return data;} 
 else {d := next.get(index-1);}
 }
-*/
+
 
 }
 
@@ -245,7 +244,7 @@ footprint := footprint + head.footprint;
 spine := {head};
 }
 
-/*
+
 method len() returns (len:int)
 requires valid();
 ensures valid();
@@ -324,8 +323,6 @@ contents := head.tailContents;
 assert head.allVLemma() && head.ValidLemma();
 
 }
-*/
-
 
 
 method insertAt(i:int, d:Data)
@@ -345,31 +342,38 @@ contents := head.tailContents;
 assert head.allVLemma() && head.ValidLemma();
 }
 
-/*
+
 method insert(d:Data, pos:int) 
 modifies footprint;
 requires valid();
 requires d != null;
-//requires 0 <= pos <= |contents|;
-requires pos == 0;
+requires 0 <= pos <= |contents|;
 
 ensures valid();
 ensures |contents| == (|old(contents)| + 1);
+
+ensures pos == 0 ==> contents == [d] + old(contents);
+ensures pos == |contents| ==> contents == old(contents) + [d];
+ensures 0 < pos < |contents| ==> contents == 
+		old(contents[0..pos]) + [d] + old(contents[pos..]);
+
 ensures fresh(footprint - old(footprint));
 {
-//assume pos == 0;
 
 var length := this.len();
 if (pos == 0) {
-
 add2Front(d);
 }
 
-else if (pos == length) {}
-
-else {}
+else if (pos == length) {
+append(d);
 }
-*/
+
+else {
+insertAt(pos, d);
+}
+}
+
 
 }
 
