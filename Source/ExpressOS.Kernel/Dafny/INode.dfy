@@ -195,6 +195,36 @@ else {d := next.get(index-1);}
 
 */
 
+method delete(index:int) returns (delNd:INode)
+requires Valid();
+requires 0 < index <= |tailContents|;
+
+modifies footprint;
+ensures Valid();
+
+ensures delNd in old(footprint);
+ensures data == old(data);
+ensures tailContents == old(tailContents[0..index-1]) + old(tailContents[index..]);
+ensures footprint == old(footprint) - {delNd};
+{
+if (index == 1) {
+    delNd := next;
+    next := next.next;
+    
+    footprint := footprint - {delNd};
+    tailContents := if next == null then [] else 
+			[next.data] + next.tailContents;
+}
+
+else {
+    delNd := next.delete(index-1);
+    
+    footprint := footprint - {delNd};
+    tailContents := [next.data] + next.tailContents;
+}
+
+}
+
 }
 
 function getFtprint(nd:INode): set<INode>
@@ -395,33 +425,25 @@ assert head.allVLemma() && head.ValidLemma();
 
 */
 
-method delete(index:int)
+method delete(index:int)  returns (delNd:INode)
 requires valid();
 requires 0 <= index < |contents|;
-
-requires index == 0;
 
 modifies footprint;
 ensures valid();
 ensures contents == old(contents[0..index]) + old(contents[index+1..]);
+ensures footprint == old(footprint) - {delNd};
+ensures spine == old(spine) - {delNd};
 {
-if (index == 0) {
-   head.next := head.next.next;
+   delNd := head.delete(index+1);
 
-   head.footprint := {head} + (if head.next == null then {} else 
-				head.next.footprint);
+   footprint := footprint - {delNd};
 
    spine := head.footprint;
-   head.tailContents := if head.next == null then [] else 
-			[head.next.data] + head.next.tailContents;
-}
+   
+   contents := head.tailContents;
 
-else {}
-
-
-contents := head.tailContents;
-
-assert head.allVLemma() && head.ValidLemma();
+   assert head.allVLemma() && head.ValidLemma();
 }
 
 
