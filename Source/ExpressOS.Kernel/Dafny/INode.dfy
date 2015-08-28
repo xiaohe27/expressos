@@ -82,6 +82,7 @@ ensures fresh(footprint - {this});
 }
 
 
+/*
 method preAppend(d:Data) returns (node:INode)
 requires Valid();
 ensures node != null && node.Valid();
@@ -160,7 +161,7 @@ assert tailContents == old(tailContents[0..i-1]) + [d] + old(tailContents[i-1..]
 this.footprint := {this} + next.footprint;
 }
 
-
+*/
 ////////////////////////////////////////////////////////
 
 method update(d:Data, index:int)
@@ -202,6 +203,8 @@ reads nd;
 if nd == null then {} else nd.footprint
 }
 
+
+//The INodes class: a list
 class INodes {
   var head: INode;
 
@@ -244,7 +247,7 @@ footprint := footprint + head.footprint;
 spine := {head};
 }
 
-
+/*
 method len() returns (len:int)
 requires valid();
 ensures valid();
@@ -373,7 +376,22 @@ else {
 insertAt(pos, d);
 }
 }
+*/
 
+method update(d:Data, index:int)
+requires 0 <= index < |contents|;
+requires valid();
+modifies footprint;
+ensures valid();
+ensures contents == old(contents[0..index]) + [d] + old(contents[index+1..]);
+ensures footprint == old(footprint);
+{
+head.update(d, index+1);
+
+contents := head.tailContents;
+
+assert head.allVLemma() && head.ValidLemma();
+}
 
 }
 
