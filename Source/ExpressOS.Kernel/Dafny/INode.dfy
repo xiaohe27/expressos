@@ -40,72 +40,6 @@ else footprint == {this} + next.footprint &&
 }
 
 
-predicate nextI(stepNum:int, node:INode)
-requires Valid();
-requires 0 <= stepNum <= |tailContents|;
-reads this, footprint;
-{
-if stepNum == 0 then this == node
-else next != null && next.nextI(stepNum-1, node)
-}
-
-predicate distLemma()
-requires Valid();
-reads this, footprint;
-ensures distLemma();
-ensures allVLemma();
-ensures 
-forall node :: node in footprint ==> node != null &&
-nextILemma2(node) &&
-nextI(|footprint|-|node.footprint|, node);
-{
-if next == null then footprint == {this}
-else 
- |footprint| - 1 == |next.footprint|
-&& next.distLemma()
-}
-
-
-/*
-predicate nextContentLemma(stepNum:int, node:INode)
-requires Valid();
-requires 0 <= stepNum <= |tailContents|;
-requires nextI(stepNum, node);
-reads this, footprint;
-ensures node != null;
-ensures nextContentLemma(stepNum, node);
-ensures stepNum == 0 ==> node.data == data;
-ensures stepNum > 0 ==> (node.data == tailContents[stepNum-1]);
-{
-if stepNum == 0 then nextI(0, node)
-else tailContents == [next.data] + next.tailContents
-&& next.nextContentLemma(stepNum-1, node)
-}
-*/
-
-
-predicate nextILemma2(node:INode)
-requires Valid();
-requires node != null && node.Valid();
-requires node in footprint;
-reads this, footprint, node, getFtprint(node);
-ensures nextILemma2(node);
-ensures {node} <= node.footprint <= footprint;
-ensures |footprint| == |tailContents| + 1;
-ensures 0 <= |footprint|-|node.footprint| <= |tailContents|;
-decreases footprint;
-{
-allVLemma() &&
-(
-if next == null || this == node then footprint == node.footprint
-else next != null &&
-ValidLemma() &&
-footprint == {this} + next.footprint &&
-next.nextILemma2(node))
-}
-
-
-
 predicate ValidLemma()
 requires Valid();
 reads this, footprint;
@@ -245,6 +179,17 @@ tailContents := [next.data] + next.tailContents;
 }
 */
 
+
+method get(index:int) returns (d:Data)
+requires Valid();
+requires 0 <= index <= |tailContents|;
+
+ensures Valid();
+ensures d == (if index == 0 then data else tailContents[index-1]);
+{
+if index == 0 {return data;} 
+else {d := next.get(index-1);}
+}
 }
 
 function getFtprint(nd:INode): set<INode>
@@ -319,39 +264,17 @@ tmp := tmp.next;
 */
 
 
-/*
+
 method get(index:int) returns (d:Data)
 requires valid();
 requires 0 <= index < |contents|;
 
-//ensures valid();
-//ensures d == contents[index];
+ensures valid();
+ensures d == contents[index];
 {
-var curNd: INode;
-var curPos: int;
-
-curNd := head;
-curPos := 0; 
-
-while (curNd.next != null)
-decreases curNd.footprint;
-invariant 0 <= curPos <= index;
-invariant head.Valid();
-invariant curNd != null && curNd.Valid() && head.nextContentLemma(curPos, curNd);
-//invariant curNd.next != null ==>
-//	curNd.next.data == head.tailContents[curPos];
-{
-if (curPos == index) 
-{
-return curNd.next.data;
+d := head.get(index+1);
 }
 
-curPos := curPos + 1;
-curNd := curNd.next;
-}
-
-}
-*/
 
 
 /*
